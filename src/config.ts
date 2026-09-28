@@ -15,6 +15,8 @@ import type {
   TinyFishSchoolSetting,
 } from "./settings/definition";
 
+export { MAX_DUCKWEED_PATCHES } from "./settings/definition";
+
 export type {
   ButterflySpawnSetting,
   DuckweedPatchSetting,

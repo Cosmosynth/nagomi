@@ -98,6 +98,16 @@ describe("SettingsStore", () => {
     expect(batches.flat().some((c) => (c as { effect?: string }).effect === "koi:count")).toBe(true);
   });
 
+  it("tags duckweed ripple-response edits with the no-rebuild duckweed:live effect", () => {
+    const store = new SettingsStore();
+    const seen: (string | undefined)[] = [];
+    store.subscribe((changes) => seen.push(...changes.map((c) => c.effect)));
+    store.set(["duckweed", "rippleResponse", "strength"], 4);
+    store.set(["duckweed", "driftX"], 3);
+    expect(store.live.duckweed.rippleResponse.strength).toBe(4);
+    expect(seen).toEqual(["duckweed:live", "duckweed:rebuild"]);
+  });
+
   it("reports koi:body with previous values for a single-field edit", () => {
     let seenPrev: unknown;
     store.subscribe((batch) => {

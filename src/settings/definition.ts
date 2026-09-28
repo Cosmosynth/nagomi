@@ -624,6 +624,65 @@ const duckweedPalette = group({
   center: color({ default: 0xffffff }),
 });
 
+// Upper bound of the duckweed-patches collection; the renderer sizes its
+// per-patch uniform array from this.
+export const MAX_DUCKWEED_PATCHES = 32;
+
+// Read live every frame into shader uniforms, so edits never rebuild the
+// duckweed geometry: the "duckweed:live" tag overrides the parent's rebuild.
+const duckweedRippleResponse = group(
+  {
+    enabled: bool({
+      default: true,
+      description: "Leaves drift away from touch, mouth, and rain ripples as the ring passes under them.",
+    }),
+    strength: num({
+      default: 0.8,
+      min: 0,
+      max: 8,
+      step: 0.1,
+      unit: "px",
+      description: "Peak push of a leaf right next to a full-strength ripple.",
+    }),
+    bandWidth: num({
+      default: 7,
+      min: 1,
+      max: 30,
+      step: 0.5,
+      unit: "px",
+      description: "Width of the ring front that pushes leaves. Wider rings move more leaves at once.",
+    }),
+    falloffDistance: num({
+      default: 181,
+      min: 5,
+      max: 200,
+      step: 1,
+      unit: "px",
+      description: "Distance from the ripple at which the push has halved.",
+    }),
+    maxPush: num({
+      default: 6,
+      min: 0,
+      max: 10,
+      step: 0.1,
+      unit: "px",
+      description: "Hard limit on how far overlapping ripples can move a leaf.",
+    }),
+    spin: num({
+      default: 0.39,
+      min: 0,
+      max: 1.5,
+      step: 0.01,
+      unit: "rad",
+      description: "Slight twist a leaf picks up while a ripple passes it.",
+    }),
+    touchWeight: num({ default: 0.8, min: 0, max: 2, step: 0.05 }),
+    mouthWeight: num({ default: 0.4, min: 0, max: 2, step: 0.05 }),
+    rainWeight: num({ default: 1.4, min: 0, max: 2, step: 0.05 }),
+  },
+  { label: "Ripple response", effect: "duckweed:live" },
+);
+
 const duckweed = group(
   {
     visiblePatchCount: num({ default: 8, min: 0, max: 16, step: 1, int: true }),
@@ -640,6 +699,7 @@ const duckweed = group(
       opacity: num({ default: 0.24, min: 0, max: 1, step: 0.01 }),
       offset: offsetGroup(1.4, 5.1),
     }),
+    rippleResponse: duckweedRippleResponse,
     palettes: list(duckweedPalette, [
       { base: 0x6fc94f, light: 0x9be66c, shade: 0x45963e, center: 0xc3ee75 },
       { base: 0x83d35b, light: 0xb1ed76, shade: 0x549e43, center: 0xd0f28a },
@@ -670,7 +730,7 @@ const duckweedPatches = collection(duckweedPatchItem, [
 ], {
   label: "Duckweed patches",
   countFrom: ["duckweed", "visiblePatchCount"],
-  max: 32,
+  max: MAX_DUCKWEED_PATCHES,
   effect: "duckweed:rebuild",
   create: (live) => {
     const l = live as { duckweed: ValueOf<typeof duckweed> };

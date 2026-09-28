@@ -501,7 +501,7 @@ export class FishRenderer {
       previewIndex === null ? null : selectedFishIndex,
     );
     this.waterSurface.update(school, time);
-    this.duckweed.update(time);
+    this.duckweed.update(time, school.ripples);
     this.lotusLeaves.update(time);
     this.butterflies.update(time);
 

@@ -75,6 +75,9 @@ const HANDLERS: Record<string, EffectHandler> = {
   water: { run: (runtime) => runtime.renderer.refreshSection("water") },
   "lotus:rebuild": { run: (runtime) => runtime.renderer.refreshSection("lotus") },
   "duckweed:rebuild": { heavy: true, run: (runtime) => runtime.renderer.refreshSection("duckweed") },
+  // Ripple-response settings are read live every frame; the tag only exists to
+  // override the parent group's heavy "duckweed:rebuild".
+  "duckweed:live": { run: () => {} },
   "butterflies:keep": { run: (runtime) => runtime.renderer.refreshSection("butterflies") },
   "butterflies:respawn": { run: (runtime) => runtime.renderer.refreshSection("butterfly-spawns") },
 };
