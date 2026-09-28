@@ -3,6 +3,7 @@ import {
   CloudFog,
   CloudRain,
   EyeOff,
+  Gauge,
   Maximize2,
   Minus,
   Minimize2,
@@ -59,8 +60,18 @@ import {
   setCanvasSize,
 } from "./config";
 import { FishRenderer } from "./fish-renderer";
+import { createFrameLimiter } from "./frame-limiter";
 import { useIsMobile } from "./hooks/use-mobile";
 import { clamp, vec } from "./math";
+import {
+  FRAME_RATE_OPTIONS,
+  effectiveFrameRate,
+  frameRateOption,
+  isFrameRateCap,
+  loadPerformancePrefs,
+  savePerformancePrefs,
+  type PerformancePrefs,
+} from "./performance-prefs";
 import { connectSettingsEffects } from "./settings/effects";
 import { connectPersistence, loadInto } from "./settings/persistence";
 import { useSettingsMeta } from "./settings/react";
@@ -166,6 +177,13 @@ export function App() {
   const [ambientControlsVisible, setAmbientControlsVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [weatherMenuOpen, setWeatherMenuOpen] = useState(false);
+  const [frameRateMenuOpen, setFrameRateMenuOpen] = useState(false);
+  const [performancePrefs, setPerformancePrefs] =
+    useState<PerformancePrefs>(loadPerformancePrefs);
+  const frameRateCap = effectiveFrameRate(performancePrefs, ambientMode);
+  // The render loop reads the cap from a ref so changing it never re-runs the
+  // runtime effect (which would dispose and recreate the renderer).
+  const frameRateCapRef = useRef(frameRateCap);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(
     AUDIO.defaultEnabled,
   );
@@ -220,6 +238,17 @@ export function App() {
     ambientModeRef.current = active;
     setAmbientMode(active);
     setAmbientControlsVisible(true);
+  }, []);
+
+  useEffect(() => {
+    frameRateCapRef.current = frameRateCap;
+  }, [frameRateCap]);
+
+  const changeFrameRate = useCallback((value: string) => {
+    if (!isFrameRateCap(value)) return;
+    const next: PerformancePrefs = { version: 1, frameRate: value, explicit: true };
+    setPerformancePrefs(next);
+    savePerformancePrefs(next);
   }, []);
 
   const toggleAmbientMode = useCallback(async () => {
@@ -402,7 +431,7 @@ export function App() {
   }, [setAmbientModeState]);
 
   useEffect(() => {
-    if (!ambientMode || settingsOpen || weatherMenuOpen) {
+    if (!ambientMode || settingsOpen || weatherMenuOpen || frameRateMenuOpen) {
       setAmbientControlsVisible(true);
       return;
     }
@@ -429,7 +458,7 @@ export function App() {
       window.removeEventListener("pointerdown", revealControls);
       window.removeEventListener("keydown", revealControls);
     };
-  }, [ambientMode, settingsOpen, weatherMenuOpen]);
+  }, [ambientMode, settingsOpen, weatherMenuOpen, frameRateMenuOpen]);
 
   useEffect(() => {
     if (!showInterface && previewFamilyRef.current !== null) setFamilyPreview(null);
@@ -465,7 +494,15 @@ export function App() {
     let accumulator = 0;
     let simulationTime = 0;
     let previousTime = performance.now();
+    const frameLimiter = createFrameLimiter();
     const animate = (now: number): void => {
+      const cap = frameRateOption(frameRateCapRef.current);
+      if (!frameLimiter.shouldRender(now, cap.fps)) {
+        // previousTime only advances on rendered frames, so the accumulator
+        // below still receives the full real elapsed time.
+        animationFrame = requestAnimationFrame(animate);
+        return;
+      }
       accumulator += Math.min((now - previousTime) / 1000, 0.1);
       previousTime = now;
       while (accumulator >= FIXED_STEP) {
@@ -556,7 +593,8 @@ export function App() {
   };
 
   const selectedWeather = getWeatherPreset(weatherPreset);
-  const ambientUiHeldOpen = settingsOpen || weatherMenuOpen;
+  const selectedFrameRate = frameRateOption(frameRateCap);
+  const ambientUiHeldOpen = settingsOpen || weatherMenuOpen || frameRateMenuOpen;
   const ambientUiHidden =
     ambientMode && !ambientControlsVisible && !ambientUiHeldOpen;
 
@@ -706,6 +744,49 @@ export function App() {
                 <span className="control-label">{ambientMode ? "Exit" : "Ambient"}</span>
                 <Kbd className="control-shortcut">F</Kbd>
               </Button>
+              <DropdownMenu
+                open={frameRateMenuOpen}
+                onOpenChange={setFrameRateMenuOpen}
+              >
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      className="frame-rate-trigger"
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Frame rate: ${selectedFrameRate.label}`}
+                    />
+                  }
+                >
+                  <Gauge aria-hidden="true" />
+                  <span className="control-label">{selectedFrameRate.label}</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="frame-rate-menu"
+                  side="top"
+                  align="center"
+                  sideOffset={8}
+                >
+                  <DropdownMenuRadioGroup
+                    value={frameRateCap}
+                    onValueChange={changeFrameRate}
+                  >
+                    <DropdownMenuLabel>Frame rate</DropdownMenuLabel>
+                    {FRAME_RATE_OPTIONS.map((option) => (
+                      <DropdownMenuRadioItem
+                        key={option.id}
+                        value={option.id}
+                        closeOnClick
+                      >
+                        <span className="frame-rate-option">
+                          <span className="frame-rate-option__label">{option.label}</span>
+                          <span className="frame-rate-option__hint">{option.description}</span>
+                        </span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 variant="ghost"
                 size="sm"

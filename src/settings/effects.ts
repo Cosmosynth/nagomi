@@ -73,7 +73,7 @@ const HANDLERS: Record<string, EffectHandler> = {
   },
   "pond-bed": { run: (runtime) => runtime.renderer.refreshSection("pond-bed") },
   water: { run: (runtime) => runtime.renderer.refreshSection("water") },
-  "lotus:palette": { run: (runtime) => runtime.renderer.refreshSection("lotus") },
+  "lotus:rebuild": { run: (runtime) => runtime.renderer.refreshSection("lotus") },
   "duckweed:rebuild": { heavy: true, run: (runtime) => runtime.renderer.refreshSection("duckweed") },
   "butterflies:keep": { run: (runtime) => runtime.renderer.refreshSection("butterflies") },
   "butterflies:respawn": { run: (runtime) => runtime.renderer.refreshSection("butterfly-spawns") },

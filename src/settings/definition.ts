@@ -485,10 +485,10 @@ const lotusFlowerPalette = group({
 
 const lotus = group(
   {
-    // Growing these two also needs a lotus:palette refresh, since the leaf
-    // and flower geometry batches are rebuilt (not recomputed every frame).
-    visibleLeafCount: num({ default: 15, min: 0, max: 32, step: 1, int: true, effect: "lotus:palette" }),
-    visibleFlowerCount: num({ default: 4, min: 0, max: 16, step: 1, int: true, effect: "lotus:palette" }),
+    // Leaf and flower geometry is built once per lotus:rebuild (only transforms
+    // change per frame), so every field in this section carries that tag.
+    visibleLeafCount: num({ default: 15, min: 0, max: 32, step: 1, int: true, effect: "lotus:rebuild" }),
+    visibleFlowerCount: num({ default: 4, min: 0, max: 16, step: 1, int: true, effect: "lotus:rebuild" }),
     radiusScale: num({ default: 1.18, min: 0, max: 5, step: 0.01 }),
     flowerRadiusScale: num({ default: 2.38, min: 0, max: 5, step: 0.01 }),
     leafSegments: num({ default: 24, min: 3, max: 64, step: 1, int: true }),
@@ -504,7 +504,7 @@ const lotus = group(
         opacity: num({ default: 0.5, min: 0, max: 1, step: 0.01 }),
         offset: offsetGroup(4.8, 10.4),
       },
-      { effect: "lotus:palette" },
+      { effect: "lotus:rebuild" },
     ),
     leafPalettes: list(
       lotusLeafPalette,
@@ -512,7 +512,7 @@ const lotus = group(
         { base: 0x5f9d78, light: 0x76aa84, shade: 0x487c66, vein: 0x3f705e, center: 0x4f866b },
         { base: 0x568f6f, light: 0x6ca17b, shade: 0x416f5b, vein: 0x386653, center: 0x497d63 },
       ],
-      { effect: "lotus:palette" },
+      { effect: "lotus:rebuild" },
     ),
     flowerPalettes: list(
       lotusFlowerPalette,
@@ -520,10 +520,10 @@ const lotus = group(
         { outerPetal: 0xf29aaa, innerPetal: 0xffc4cc, petalLight: 0xffe1e2, center: 0xf2bd45, centerDark: 0xb96d31 },
         { outerPetal: 0xe985ac, innerPetal: 0xfab7ce, petalLight: 0xffdce6, center: 0xf5c64b, centerDark: 0xbd7330 },
       ],
-      { effect: "lotus:palette" },
+      { effect: "lotus:rebuild" },
     ),
   },
-  { label: "Lotus" },
+  { label: "Lotus", effect: "lotus:rebuild" },
 );
 
 const lotusLeafItem = group({
@@ -560,7 +560,7 @@ const lotusLeaves = collection(lotusLeafItem, [
   label: "Lotus placements",
   countFrom: ["lotus", "visibleLeafCount"],
   max: 32,
-  effect: "lotus:palette",
+  effect: "lotus:rebuild",
   create: () => {
     const randomInt = (min: number, maxExclusive: number): number =>
       Math.floor(min + Math.random() * (maxExclusive - min));
@@ -596,7 +596,7 @@ const lotusFlowers = collection(lotusFlowerItem, [
   label: "Lotus flowers",
   countFrom: ["lotus", "visibleFlowerCount"],
   max: 16,
-  effect: "lotus:palette",
+  effect: "lotus:rebuild",
   create: (live) => {
     const l = live as { lotus: ValueOf<typeof lotus>; ["lotus-leaves"]: ValueOf<typeof lotusLeaves> };
     const randomInt = (min: number, maxExclusive: number): number =>
