@@ -332,7 +332,14 @@ export function App() {
     const gain = ambientAudioGainRef.current;
     if (context && gain) {
       const now = context.currentTime;
-      gain.gain.cancelAndHoldAtTime(now);
+      // cancelAndHoldAtTime is missing in Firefox; pin the current value manually there.
+      if (typeof gain.gain.cancelAndHoldAtTime === "function") {
+        gain.gain.cancelAndHoldAtTime(now);
+      } else {
+        const current = gain.gain.value;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(current, now);
+      }
       gain.gain.linearRampToValueAtTime(
         enabled ? AUDIO.ambient.volume : 0,
         now + AUDIO.toggleFadeSeconds,
