@@ -28,6 +28,7 @@ import {
 } from "react";
 import { Button } from "@/components/ui/button";
 import { GitHubStars } from "@/components/github-stars";
+import { WallpaperAppLink } from "@/components/wallpaper-app-link";
 import {
   Drawer,
   DrawerClose,
@@ -101,6 +102,7 @@ const emptyStats: SceneStats = {
 
 const AMBIENT_IDLE_DELAY_MS = 2400;
 const GITHUB_REPOSITORY = "msk1039/procedural-koi-threejs";
+const WALLPAPER_APP_URL = "https://nagomi.m4yank.com/";
 
 // Restores v2 (or migrates v1) localStorage settings into the store before
 // the first render, and wires up debounced+pagehide saving from then on.
@@ -645,6 +647,8 @@ export function App() {
 
             <div className="top-actions">
               <GitHubStars repo={GITHUB_REPOSITORY} stargazersCount={2} />
+              <Separator orientation="vertical" />
+              <WallpaperAppLink href={WALLPAPER_APP_URL} />
               <Separator orientation="vertical" />
               <Drawer
                 open={settingsOpen}
