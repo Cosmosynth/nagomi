@@ -177,6 +177,11 @@ The logical pond is only `480 × 270` pixels and is scaled to the screen. The
 simulation uses a fixed 60 updates per second, which keeps movement stable even
 when the display frame rate changes.
 
+A frame-rate menu in the control dock can cap how often the pond is drawn
+(Native, 60, 30, or 20 fps). The simulation still steps at 60 Hz; a lower cap
+just runs more steps per drawn frame. The choice is saved on this device, and
+ambient mode uses 30 fps unless you picked a value yourself.
+
 The renderer also reuses geometry buffers, fish objects, ripples, and render
 targets instead of creating new ones every frame. This keeps allocation and
 garbage-collection work low.

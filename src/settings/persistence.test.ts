@@ -50,6 +50,32 @@ describe("persistence", () => {
     expect(store.live.koi.initialCount).toBe(10);
   });
 
+  it("fills the duckweed rippleResponse defaults when saved data predates it", () => {
+    localStorage.setItem(
+      "nagomi:pond-settings:v2",
+      JSON.stringify({
+        version: 2,
+        overrides: { "duckweed.driftX": 7 },
+        weather: "sunny",
+        rain: false,
+      }),
+    );
+    const store = new SettingsStore();
+    loadInto(store);
+    expect(store.live.duckweed.driftX).toBe(7);
+    expect(store.live.duckweed.rippleResponse).toMatchObject({
+      enabled: true,
+      strength: 0.8,
+      bandWidth: 7,
+      falloffDistance: 181,
+      maxPush: 6,
+      spin: 0.39,
+      touchWeight: 0.8,
+      mouthWeight: 0.4,
+      rainWeight: 1.4,
+    });
+  });
+
   it("migrates a v1 snapshot to v2 overrides, dropping removed and unchanged fields", () => {
     const v1Config = defaults(definition) as Record<string, any>;
     v1Config.koi = { ...v1Config.koi, initialCount: 40 };

@@ -485,10 +485,10 @@ const lotusFlowerPalette = group({
 
 const lotus = group(
   {
-    // Growing these two also needs a lotus:palette refresh, since the leaf
-    // and flower geometry batches are rebuilt (not recomputed every frame).
-    visibleLeafCount: num({ default: 15, min: 0, max: 32, step: 1, int: true, effect: "lotus:palette" }),
-    visibleFlowerCount: num({ default: 4, min: 0, max: 16, step: 1, int: true, effect: "lotus:palette" }),
+    // Leaf and flower geometry is built once per lotus:rebuild (only transforms
+    // change per frame), so every field in this section carries that tag.
+    visibleLeafCount: num({ default: 15, min: 0, max: 32, step: 1, int: true, effect: "lotus:rebuild" }),
+    visibleFlowerCount: num({ default: 4, min: 0, max: 16, step: 1, int: true, effect: "lotus:rebuild" }),
     radiusScale: num({ default: 1.18, min: 0, max: 5, step: 0.01 }),
     flowerRadiusScale: num({ default: 2.38, min: 0, max: 5, step: 0.01 }),
     leafSegments: num({ default: 24, min: 3, max: 64, step: 1, int: true }),
@@ -504,7 +504,7 @@ const lotus = group(
         opacity: num({ default: 0.5, min: 0, max: 1, step: 0.01 }),
         offset: offsetGroup(4.8, 10.4),
       },
-      { effect: "lotus:palette" },
+      { effect: "lotus:rebuild" },
     ),
     leafPalettes: list(
       lotusLeafPalette,
@@ -512,7 +512,7 @@ const lotus = group(
         { base: 0x5f9d78, light: 0x76aa84, shade: 0x487c66, vein: 0x3f705e, center: 0x4f866b },
         { base: 0x568f6f, light: 0x6ca17b, shade: 0x416f5b, vein: 0x386653, center: 0x497d63 },
       ],
-      { effect: "lotus:palette" },
+      { effect: "lotus:rebuild" },
     ),
     flowerPalettes: list(
       lotusFlowerPalette,
@@ -520,10 +520,10 @@ const lotus = group(
         { outerPetal: 0xf29aaa, innerPetal: 0xffc4cc, petalLight: 0xffe1e2, center: 0xf2bd45, centerDark: 0xb96d31 },
         { outerPetal: 0xe985ac, innerPetal: 0xfab7ce, petalLight: 0xffdce6, center: 0xf5c64b, centerDark: 0xbd7330 },
       ],
-      { effect: "lotus:palette" },
+      { effect: "lotus:rebuild" },
     ),
   },
-  { label: "Lotus" },
+  { label: "Lotus", effect: "lotus:rebuild" },
 );
 
 const lotusLeafItem = group({
@@ -560,7 +560,7 @@ const lotusLeaves = collection(lotusLeafItem, [
   label: "Lotus placements",
   countFrom: ["lotus", "visibleLeafCount"],
   max: 32,
-  effect: "lotus:palette",
+  effect: "lotus:rebuild",
   create: () => {
     const randomInt = (min: number, maxExclusive: number): number =>
       Math.floor(min + Math.random() * (maxExclusive - min));
@@ -596,7 +596,7 @@ const lotusFlowers = collection(lotusFlowerItem, [
   label: "Lotus flowers",
   countFrom: ["lotus", "visibleFlowerCount"],
   max: 16,
-  effect: "lotus:palette",
+  effect: "lotus:rebuild",
   create: (live) => {
     const l = live as { lotus: ValueOf<typeof lotus>; ["lotus-leaves"]: ValueOf<typeof lotusLeaves> };
     const randomInt = (min: number, maxExclusive: number): number =>
@@ -624,6 +624,65 @@ const duckweedPalette = group({
   center: color({ default: 0xffffff }),
 });
 
+// Upper bound of the duckweed-patches collection; the renderer sizes its
+// per-patch uniform array from this.
+export const MAX_DUCKWEED_PATCHES = 32;
+
+// Read live every frame into shader uniforms, so edits never rebuild the
+// duckweed geometry: the "duckweed:live" tag overrides the parent's rebuild.
+const duckweedRippleResponse = group(
+  {
+    enabled: bool({
+      default: true,
+      description: "Leaves drift away from touch, mouth, and rain ripples as the ring passes under them.",
+    }),
+    strength: num({
+      default: 0.8,
+      min: 0,
+      max: 8,
+      step: 0.1,
+      unit: "px",
+      description: "Peak push of a leaf right next to a full-strength ripple.",
+    }),
+    bandWidth: num({
+      default: 7,
+      min: 1,
+      max: 30,
+      step: 0.5,
+      unit: "px",
+      description: "Width of the ring front that pushes leaves. Wider rings move more leaves at once.",
+    }),
+    falloffDistance: num({
+      default: 181,
+      min: 5,
+      max: 200,
+      step: 1,
+      unit: "px",
+      description: "Distance from the ripple at which the push has halved.",
+    }),
+    maxPush: num({
+      default: 6,
+      min: 0,
+      max: 10,
+      step: 0.1,
+      unit: "px",
+      description: "Hard limit on how far overlapping ripples can move a leaf.",
+    }),
+    spin: num({
+      default: 0.39,
+      min: 0,
+      max: 1.5,
+      step: 0.01,
+      unit: "rad",
+      description: "Slight twist a leaf picks up while a ripple passes it.",
+    }),
+    touchWeight: num({ default: 0.8, min: 0, max: 2, step: 0.05 }),
+    mouthWeight: num({ default: 0.4, min: 0, max: 2, step: 0.05 }),
+    rainWeight: num({ default: 1.4, min: 0, max: 2, step: 0.05 }),
+  },
+  { label: "Ripple response", effect: "duckweed:live" },
+);
+
 const duckweed = group(
   {
     visiblePatchCount: num({ default: 8, min: 0, max: 16, step: 1, int: true }),
@@ -640,6 +699,7 @@ const duckweed = group(
       opacity: num({ default: 0.24, min: 0, max: 1, step: 0.01 }),
       offset: offsetGroup(1.4, 5.1),
     }),
+    rippleResponse: duckweedRippleResponse,
     palettes: list(duckweedPalette, [
       { base: 0x6fc94f, light: 0x9be66c, shade: 0x45963e, center: 0xc3ee75 },
       { base: 0x83d35b, light: 0xb1ed76, shade: 0x549e43, center: 0xd0f28a },
@@ -670,7 +730,7 @@ const duckweedPatches = collection(duckweedPatchItem, [
 ], {
   label: "Duckweed patches",
   countFrom: ["duckweed", "visiblePatchCount"],
-  max: 32,
+  max: MAX_DUCKWEED_PATCHES,
   effect: "duckweed:rebuild",
   create: (live) => {
     const l = live as { duckweed: ValueOf<typeof duckweed> };
