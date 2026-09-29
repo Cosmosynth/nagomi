@@ -258,8 +258,12 @@ input[type="color"] {
   position: absolute;
   top: clamp(0.6rem, 1.8vw, 1.1rem);
   left: clamp(0.6rem, 1.8vw, 1.1rem);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
   width: max-content;
-  padding: 0.46rem 0.72rem 0.5rem;
+  height: var(--top-bar-height);
+  padding: 0 0.72rem;
   overflow: hidden;
   border-radius: 0.7rem;
 }
@@ -271,6 +275,11 @@ input[type="color"] {
   font-weight: 660;
   letter-spacing: 0.14em;
   line-height: 1;
+}
+
+.pond-ui {
+  /* Shared by the brand box and the action panel so their heights match. */
+  --top-bar-height: calc(1.8rem + 0.44rem + 2px);
 }
 
 .top-actions {
@@ -346,6 +355,12 @@ input[type="color"] {
 .github-stars {
   gap: 0.38rem;
   padding-inline: 0.48rem;
+}
+
+.wallpaper-link {
+  gap: 0.38rem;
+  padding-inline: 0.55rem;
+  border-radius: 0.62rem;
 }
 
 .github-stars__count {
@@ -1062,7 +1077,7 @@ input[type="color"] {
     order: -1;
     display: flex;
     width: 100%;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
     margin-bottom: 0.65rem;
     padding-inline: 0.5rem;
@@ -1070,7 +1085,8 @@ input[type="color"] {
 
   .brand-float {
     position: static;
-    padding: 0.42rem 0.52rem;
+    height: auto;
+    padding: 0 0.52rem;
     border-radius: 0.8rem;
   }
 
@@ -1087,6 +1103,10 @@ input[type="color"] {
 
   .settings-trigger span {
     display: none;
+  }
+
+  .wallpaper-link {
+    height: 2rem;
   }
 
   .control-dock {
@@ -1225,6 +1245,30 @@ input[type="color"] {
 
   .stage--ambient .display {
     height: 100%;
+  }
+}
+
+@media (max-width: 350px) {
+  .brand-float {
+    flex-shrink: 0;
+  }
+
+  .github-stars__count {
+    display: none;
+  }
+
+  .top-actions {
+    gap: 0;
+  }
+
+  .github-stars {
+    padding-inline: 0.4rem;
+  }
+
+  .wallpaper-link {
+    gap: 0.3rem;
+    padding-inline: 0.3rem;
+    font-size: 0.8rem;
   }
 }
 
